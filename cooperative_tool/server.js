@@ -118,8 +118,8 @@ let transporter = nodemailer.createTransport({
   });
 
 // SMS Service
-const accountSid = 'ACe4fc96a53c7f3ca760c7e8759ebafc2d';
-const authToken = 'b75cf054ecf14a4373966cb409fc3745';
+const accountSid = 'SECRET_KEY';
+const authToken = 'SECRET_KEY';
 const twilioClient = require('twilio')(accountSid, authToken);
 
 // Create WebSocket Instance
