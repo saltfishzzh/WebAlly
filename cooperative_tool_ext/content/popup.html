@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            min-width: 200px;
+            overflow-x: hidden;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 200px;
+        }
+        input#save {
+            font-weight: bold; 
+            width: auto;
+        }
+    </style>
+    <script src="popup.js"></script>
+</head>
+<body>
+    <form id="saveuserinfo">
+
+        <p>
+            <strong>Who needs help?</strong>
+            <br />
+        </p>
+
+        <p>
+            <label for="username">Your name</label><br />
+            <input type="text" id="username" name="username" value="" />
+        </p>
+
+        <p>
+            <label for="useremail">Your email</label><br />
+            <input type="text" id="useremail" name="useremail" value="" />
+        </p>
+
+        <!-- <p>Select your status    </p>
+
+                <label for="helpee">Helpee</label>
+                <input type="radio" id="helpee" name="status" value="helpee"
+                        checked>
+
+                <label for="helper">Helper</label>
+                <input type="radio" id="helper" name="status" value="helper"> -->
+
+        <p>
+            <strong>Who will help you?</strong>
+            <br/>
+        </p>
+
+        <p>
+            <label for="helperemail">Helper's email</label><br />
+            <input type="text" id="helperemail" name="helperemail" value="" />
+            </textarea>
+        </p>
+
+        <p>
+            <label for="helpernumber">Helper's phone number</label><br />
+            <input type="text" id="helpernumber" name="helpernumber" value="" />
+            </textarea>
+        </p>
+
+        <p>
+            <input id="save" type="submit" value="Save" />
+            <span id="status-display"></span>
+        </p>
+
+    </form>
+
+    <!-- <button id="shortcut">Change Shortcut</button> -->
+
+</body>
+</html>

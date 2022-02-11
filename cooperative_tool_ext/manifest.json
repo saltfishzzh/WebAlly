@@ -1,0 +1,115 @@
+{
+  "manifest_version": 2,
+  "name"            : "Privacy Cooperative Tool with Friends",
+  "version"         : "0.2",
+  "description"     : "Privacy Cooperative Tool with Friends",
+
+  "browser_action": {
+    "default_icon": {
+      "19" : "/images/icon19.png",
+      "38" : "/images/icon38.png"
+    },
+    "default_title": "Privacy Cooperative Tool",
+    "default_popup": "/content/popup.html"
+  },
+
+  "background" : {
+    "scripts": [
+      "background/background.js"
+    ],
+    "persistent": true
+  },
+
+  "web_accessible_resources": [
+    "/images/pixel.png",
+    "/images/template1.png",
+    "/images/template2.png",
+    "/images/template3.png",
+    "/images/template4.png",
+    "/images/puzzle_template.png",
+    "/images/sent.mp3",
+    "/images/helper.mp3",
+    "/images/success.mp3",
+    "/images/tryAgain.mp3",
+    "/images/adjustScaling.mp3"
+  ],
+
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Alt+P"
+      }
+    },
+    "Solve-Google-reCAPTCHA": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "Take screenshot to solve Google reCAPTCHA"
+    },
+    "Solve-Puzzle-CAPTCHA": {
+      "suggested_key": {
+        "default": "Alt+D"
+      },
+      "description": "Take screenshot to solve Puzzle CAPTCHA"
+    },
+    "take-full-screen": {
+      "suggested_key": {
+        "default": "Shift+Alt+S"
+      },
+      "description": "Take Full Screenshot"
+    }
+  },
+
+  "content_scripts": [
+    {
+        "js": [
+            "/content/opencv.js"
+        ], 
+        "matches": [
+            "<all_urls>"
+        ], 
+        "run_at": "document_start",
+        "exclude_matches": [
+            "https://www.cooperativetool.us/*"
+        ]
+    },
+    {
+        "js": [
+            "/content/content.js"
+        ], 
+        "matches": [
+            "<all_urls>"
+        ], 
+        "run_at": "document_end", 
+        "exclude_matches": [
+            "https://www.cooperativetool.us/*"
+        ]
+    },
+    {
+        "js": [
+            "/content/content_sub.js"
+        ], 
+        "matches": [
+            "<all_urls>"
+        ], 
+        "all_frames": true, 
+        "run_at": "document_end",
+        "exclude_matches": [
+            "https://www.cooperativetool.us/*"
+        ]
+    }
+  ],
+
+  "icons": {
+    "16"  : "images/icon16.png",
+    "48"  : "images/icon48.png",
+    "128" : "images/icon128.png"
+  },
+
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "<all_urls>"
+  ]
+}

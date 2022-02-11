@@ -1,0 +1,389 @@
+extends layout
+
+block content
+  h1 Your Friend Needs Help!
+  //- p #{userName} has asked you to solve this task:
+  p#countdown
+  //- p Step 1: Choose what you see:  
+  //- input#three(type="radio" name="number" value="three") 
+  //- label(for="three") 3 * 3 tile images
+  //- p   
+  //- input#four(type="radio" name="number" value="four")
+  //- label(for="four") 4 * 4 tile images
+  
+  p 
+    | Step 1: Click on the right images, please allow a few seconds for tile images to update, and 
+    strong click the button in the image
+  p
+  p Step 2: If you see the reCAPTCHA image 
+    strong disappeared 
+    | within the time limit, 
+  p please click the 
+    strong "Notify your friend" 
+    | button to let your friend know, otherwise, please click the 
+    strong "Try again" 
+    | button to help your friend again 
+  
+  p
+  #container.img_container
+    img#image(src='/images/' + user + '.' + target + '.' + id + '.png' style="width:50%;position:relative")
+
+  p
+  button(onclick="finished()") Notify your friend
+  button(onclick="tryAgain()") Try again
+
+  script.
+    var updating = false;
+    //document.addEventListener("deviceready", init, false);
+    var ws = new WebSocket("wss://www.cooperativetool.us");
+    var clientId = "#{clientId}";
+
+    let tileConsts = [
+      [[14, 274, 534], [256, 516, 776]],
+      [[14, 208, 402, 596], [255, 449, 643, 837]]
+    ];
+    var top_z = 10;
+    var tileNum = "#{tileNumber}";
+
+    ws.onopen = function (e) {
+      console.log('Helper builds ws connection');
+      ws.send(JSON.stringify({
+        type: "helperStarted",
+        clientId: clientId
+      }));
+    }
+    ws.onmessage = function (e) {
+      console.log("helper page receive data: ", e.data);
+      let updatedData = JSON.parse(e.data);
+      if (updatedData.type === "realTimeUpdate") {
+        //console.log("readTimeUpdate");
+        //let hover = document.getElementById("hover");
+        //hover.remove();
+
+        if (updatedData.message.tileNum > 0) {
+          //- tileImage.width = img.width
+          //- tileImage.height = img.height
+          //- tileImage.style.left = (rect.left + window.scrollX) + 'px'
+          //- tileImage.style.top = (rect.top + window.scrollY) + 'px'
+          tileNum = updatedData.message.tileNum;
+          console.log("tileNum", tileNum);
+          var img = document.getElementById("image");
+          img.src = '/images/' + updatedData.user + '.' + updatedData.target + "." + updatedData.message.imageCount + '.realTimeUpdate.png?rand=' + Math.random();
+          img.style.zIndex = ++top_z;
+          img.onload = () => {
+            let hover = document.getElementById("hover");
+            hover.remove();
+          }
+        }
+        else if (updatedData.message.tileNum == 0) {
+          console.log("successful");
+          let container = document.getElementById('container');
+          container.remove();
+          let para = document.createElement('p');
+          para.innerText = "You have successfully solved the task!";
+          document.body.appendChild(para); 
+        }
+        else {
+          var tileImage = document.createElement('img');
+          tileImage.id = 'tileImage' + updatedData.message.imageCount;
+          var container = document.getElementById('container');
+          var img = document.getElementById("image");
+          var rect = img.getBoundingClientRect();
+          //console.log("rect", rect.left, rect.top);
+          container.appendChild(tileImage);
+          tileImage.style.position = 'absolute';
+          tileImage.style.zIndex = ++top_z;
+          tileImage.src = '/images/' + updatedData.user + '.' + updatedData.target + "." + updatedData.message.imageCount + '.realTimeUpdate.png?rand=' + Math.random();
+
+          tileImage.width = (tileNum == 3? 252.0: 190.0) / 800.0 * img.width
+          tileImage.height = (tileNum == 3? 252.0: 190.0) / 1160.0 * img.height
+          tileImage.style.left = (tileConsts[tileNum - 3][0][updatedData.message.x_num] / 800.0 * img.width + rect.left + window.scrollX) + 'px'
+          tileImage.style.top = (tileConsts[tileNum - 3][1][updatedData.message.y_num] / 1160 * img.height + rect.top + window.scrollY) + 'px'
+          //console.log("left, top", tileImage.style.left, tileImage.style.top)
+          tileImage.onload = () => {
+            let hover = document.getElementById("hover");
+            hover.remove();
+          }
+          tileImage.addEventListener('mousedown', function(e) {
+            getCursorPosition(e, tile=true, {tileNum:tileNum, x_num:updatedData.message.x_num, y_num:updatedData.message.y_num})
+          })
+        }
+
+        //- var notify = new Audio('/images/notification.mp3');
+        //- notify.play();
+        
+        //- img.src = '/images/' + updatedData.user + '.' + updatedData.target + "." + updatedData.message.imageCount + '.realTimeUpdate.png?rand=' + Math.random();
+        //- img.onload = () => {
+        //-   let hover = document.getElementById("hover");
+        //-   hover.remove();
+        //-   console.log("loaded")
+        //- }
+      }
+      //- else if (updatedData.type == "helperClientId") {
+      //-   helperClientId = updatedData.message;
+      //- }
+    }
+    function getCursorPosition(event, tile=false, params={}) {
+      let user = "#{user}";
+      let target = "#{target}";
+      let id = "#{id}";
+      let type = "#{type}";
+      //console.log(user, target);
+
+      var x = event.offsetX
+      var y = event.offsetY
+
+      //console.log("event.offset", x, y);
+
+      //tileNum = "#{tileNumber}";
+      console.log("tileNum getCursorPosition", tileNum);
+
+      //- var tile3 = document.getElementById('three')
+      //- var tile4 = document.getElementById('four')
+
+      //var tileNum = 0
+      var x_num = -1
+      var y_num = -1
+      var tempImg = document.getElementById('image')
+      var _x = x * 1.0 / tempImg.width * 800.0
+      var _y = y * 1.0 / tempImg.height * 1160.0
+
+      if (tileNum == 3) {
+        if (_x >= 14 && _x <= 266) x_num = 0;
+        else if (_x >= 274 && _x <= 526) x_num = 1;
+        else if (_x >= 534 && _x <= 786) x_num = 2;
+        if (_y >= 256 && _y <= 508) y_num = 0;
+        else if (_y >= 516 && _y <= 768) y_num = 1;
+        else if (_y >= 776 && _y <= 1028) y_num = 2;
+
+        if (_x >= 584 && _x <= 784 && _y >= 1062 && _y <= 1146) {
+          x_num = 3; // Submit
+          y_num = 3; // Submit
+        }
+
+        //- if (_x >= 14 && _x <= 110 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 10; // refresh, disable for now
+        //-   y_num = 10;
+        //- }
+        //- else if (_x > 110 && _x <= 206 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 11; // audio
+        //-   y_num = 11;
+        //- }
+        //- else if (_x > 206 && _x <= 302 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 12; // instructions, disable for now
+        //-   y_num = 12;
+        //- }
+
+        if (tile) {
+          x_num = params.x_num;
+          y_num = params.y_num;
+          x += tileConsts[params.tileNum - 3][0][params.x_num] / 800.0 * tempImg.width
+          y += tileConsts[params.tileNum - 3][1][params.y_num] / 1160.0 * tempImg.height
+        }
+      }
+      else if (tileNum == 4) {
+        if (_x >= 14 && _x <= 204) x_num = 0;
+        else if (_x >= 208 && _x <= 398) x_num = 1;
+        else if (_x >= 402 && _x <= 592) x_num = 2;
+        else if (_x >= 596 && _x <= 786) x_num = 3;
+        else if (_x >= 584 && _x <= 784) x_num = 4;
+        if (_y >= 255 && _y <= 445) y_num = 0;
+        else if (_y >= 449 && _y <= 639) y_num = 1;
+        else if (_y >= 643 && _y <= 833) y_num = 2;
+        else if (_y >= 837 && _y <= 1027) y_num = 3;
+        else if (_y >= 1062 && _y <= 1146) y_num = 4;
+
+        if (_x >= 584 && _x <= 784 && _y >= 1062 && _y <= 1146) {
+          x_num = 4; // Submit
+          y_num = 4; // Submit
+        }
+
+        //- if (_x >= 14 && _x <= 110 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 10;
+        //-   y_num = 10;
+        //- }
+        //- else if (_x > 110 && _x <= 206 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 11;
+        //-   y_num = 11;
+        //- }
+        //- else if (_x > 206 && _x <= 302 && _y >= 1056 && _y <= 1152) {
+        //-   x_num = 12;
+        //-   y_num = 12;
+        //- }
+
+        if (tile) {
+          x_num = params.x_num;
+          y_num = params.y_num;
+          x += tileConsts[params.tileNum - 3][0][params.x_num] / 800.0 * tempImg.width
+          y += tileConsts[params.tileNum - 3][1][params.y_num] / 1160.0 * tempImg.height
+        }
+      }
+
+      //- if (tile3.checked || tile4.checked) {
+      //-   if (tile3.checked) {
+      //-     tileNum = 3;
+      //-     if (_x >= 14 && _x <= 266) x_num = 0;
+      //-     else if (_x >= 274 && _x <= 526) x_num = 1;
+      //-     else if (_x >= 534 && _x <= 786) x_num = 2;
+      //-     if (_y >= 256 && _y <= 508) y_num = 0;
+      //-     else if (_y >= 516 && _y <= 768) y_num = 1;
+      //-     else if (_y >= 776 && _y <= 1028) y_num = 2;
+
+      //-     if (_x >= 584 && _x <= 784 && _y >= 1062 && _y <= 1146) {
+      //-       x_num = 3;
+      //-       y_num = 3;
+      //-     }
+
+      //-     if (tile) {
+      //-       x_num = params.x_num;
+      //-       y_num = params.y_num;
+      //-       x += tileConsts[params.tileNum - 3][0][params.x_num] / 800.0 * tempImg.width
+      //-       y += tileConsts[params.tileNum - 3][1][params.y_num] / 1160.0 * tempImg.height
+      //-     }
+      //-   }
+      //-   else {
+      //-     tileNum = 4;
+      //-     if (_x >= 14 && _x <= 204) x_num = 0;
+      //-     else if (_x >= 208 && _x <= 398) x_num = 1;
+      //-     else if (_x >= 402 && _x <= 592) x_num = 2;
+      //-     else if (_x >= 596 && _x <= 786) x_num = 3;
+      //-     else if (_x >= 584 && _x <= 784) x_num = 4;
+      //-     if (_y >= 255 && _y <= 445) y_num = 0;
+      //-     else if (_y >= 449 && _y <= 639) y_num = 1;
+      //-     else if (_y >= 643 && _y <= 833) y_num = 2;
+      //-     else if (_y >= 837 && _y <= 1027) y_num = 3;
+      //-     else if (_y >= 1062 && _y <= 1146) y_num = 4;
+
+      //-     if (_x >= 584 && _x <= 784 && _y >= 1062 && _y <= 1146) {
+      //-       x_num = 4;
+      //-       y_num = 4;
+      //-     }
+
+      //-     if (tile) {
+      //-       x_num = params.x_num;
+      //-       y_num = params.y_num;
+      //-     }
+      //-   }
+        //TODO: hover at tile image
+
+        console.log("tile info", tileNum, x_num, y_num, tile);
+
+        if (x_num >= 0 && y_num >= 0) {
+          var hover = document.createElement('img')
+          hover.id = 'hover'
+          var container = document.getElementById('container')
+          var img = document.getElementById('image')
+          var rect = img.getBoundingClientRect();
+          container.appendChild(hover)
+          hover.style.zIndex = ++top_z;
+          hover.src = '/images/hover.png?rand=' + Math.random()
+          hover.style.opacity = "0.6";
+          hover.width = img.width
+          hover.height = img.height
+          hover.style.position = 'absolute'
+          hover.style.left = (rect.left + window.scrollX) + 'px'
+          hover.style.top = (rect.top + window.scrollY) + 'px'
+          ws.send(JSON.stringify({
+              type: "reply" + type,
+              user: user,
+              target: target,
+              clientId: clientId,
+              message: {x:x, y:y, width:img.width, height:img.height, tileNum: tileNum, x_num:x_num, y_num:y_num}
+          }));
+          console.log("helper page send message: ", {
+              type: "reply" + type,
+              user: user,
+              target: target,
+              clientId: clientId,
+              message: {x:x, y:y, width:img.width, height:img.height, tileNum: tileNum, x_num:x_num, y_num:y_num}
+          })
+        }
+      //}
+      else {
+        var hover = document.createElement('img')
+        hover.id = 'hover'
+        var container = document.getElementById('container')
+        var img = document.getElementById('image')
+        var rect = img.getBoundingClientRect();
+        container.appendChild(hover)
+        hover.src = '/images/unsuccessfulHover.png?rand=' + Math.random()
+        hover.style.opacity = "0.6";
+        hover.width = img.width
+        hover.height = img.height
+        hover.style.position = 'absolute'
+        hover.style.left = (rect.left + window.scrollX) + 'px'
+        hover.style.top = (rect.top + window.scrollY) + 'px'
+        hover.onload = () => {
+          setTimeout(function() {		
+            setTimeout(function() { hover.remove(); }, 1000);
+          }, 1000);
+        }
+      }
+
+      
+
+      //- console.log("offset", x, y)
+      //- console.log("page", event.pageX, event.pageY)
+      //- console.log("client", event.clientX, event.clientY)
+      //- var feedback = document.createElement('div');
+      //- var sub_image = document.createElement("img")
+      //- feedback.appendChild(sub_image)
+      //- feedback.style.left = parseInt(event.pageX - 12.5) + 'px'
+      //- feedback.style.top = parseInt(event.pageY - 12.5) + 'px'
+      //- feedback.style.position = "absolute"
+      //- feedback.style.zIndex = 3
+      //- document.body.appendChild(feedback)
+      //- sub_image.src = '/images/sticker.png?rand=' + Math.random()
+      //- sub_image.style.opacity = "0.6";
+      //- sub_image.style.filter  = 'alpha(opacity=60)';
+      //- sub_image.onload = () => {
+      //-   setTimeout(function() {		
+      //-     setTimeout(function() { feedback.remove(); }, 1000);
+      //-   }, 1000);
+      //- }
+    
+    }
+    const img = document.getElementById('image')
+    img.addEventListener('mousedown', function(e) {
+      getCursorPosition(e)
+    })
+
+    let timestamp = "#{time}";
+    var countDown = new Date(timestamp).getTime() + 1000 * 120;
+
+    var myfunc = setInterval(function() {
+
+      var now = new Date().getTime();
+      var timeleft = countDown - now;
+          
+      // Calculating the days, hours, minutes and seconds left
+      var minutes = Math.floor((timeleft % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((timeleft % (1000 * 60)) / 1000);
+          
+      // Result is output to the specific element
+      document.getElementById("countdown").innerHTML = "Note that you have " + minutes + "m " + seconds + "s to solve it"; 
+          
+      // Display the message when countdown is over
+      if (timeleft < 0) {
+          clearInterval(myfunc);
+          document.getElementById("countdown").innerHTML = "Sorry, time is up";
+          var containerNode = document.getElementById("container");
+          while (containerNode.hasChildNodes()) {
+              containerNode.removeChild(containerNode.lastChild);
+          }
+      }
+    }, 1000);
+
+    function finished() {
+      ws.send(JSON.stringify({
+        type: "success",
+        clientId: clientId
+      }));
+    }
+
+    function tryAgain() {
+      ws.send(JSON.stringify({
+        type: "tryAgain",
+        clientId: clientId
+      }));
+    }
